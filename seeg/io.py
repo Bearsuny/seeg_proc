@@ -58,44 +58,62 @@ class BaseData:
 
 
 class ButtonHandler:
-    def __init__(self, channels_data, axes):
+    def __init__(self, channels_data, axes, n_start_points, step):
         self.flag = False
+        self.direction_flag = True  # True: forward, False: back
         self.channels_data = channels_data
         self.axes = axes
 
-        self.range_s = 120000
-        self.range_e = self.range_s + 20000
-        self.step = 20
+        self.range_s = n_start_points
+        self.range_e = self.range_s + step
+        self.step = step
 
         self.lines = []
         x_data = np.arange(self.range_s, self.range_e)
         for i, ax in enumerate(self.axes):
             y_data = channels_data[i, self.range_s:self.range_e]
-            line = ax.plot(y_data)[0]
+            line = ax.plot(x_data, y_data)[0]
             plt.draw()
             self.lines.append(line)
 
+        self.thread = Thread(target=self.plot)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
     def plot(self):
-        while self.flag:
+        while True:
             sleep(0.01)
-            self.range_s += self.step
-            self.range_e += self.step
-            if self.range_e > self.channels_data.shape[1]:
-                break
-            for line, channel_data, ax in zip(self.lines, channels_data, self.axes):
-                x_data = np.arange(self.range_s, self.range_e)
-                y_data = channel_data[self.range_s:self.range_e]
-                line.set_xdata(x_data)
-                line.set_ydata(y_data)
-                ax.set(xlim=[self.range_s, self.range_e])
-                plt.draw()
+            if self.flag:
+                sleep(0.01)
 
-    def start(self, event):
+                if self.direction_flag:
+                    self.range_s += self.step
+                    self.range_e += self.step
+                    if self.range_e > self.channels_data.shape[1]:
+                        break
+                else:
+                    self.range_s -= self.step
+                    self.range_e -= self.step
+                    if self.range_s < 0:
+                        break
+
+                for line, channel_data, ax in zip(self.lines, self.channels_data, self.axes):
+                    x_data = np.arange(self.range_s, self.range_e)
+                    y_data = channel_data[self.range_s:self.range_e]
+                    line.set_xdata(x_data)
+                    line.set_ydata(y_data)
+                    ax.set(xlim=[self.range_s, self.range_e])
+                    plt.draw()
+
+    def forward(self, event):
         self.flag = True
-        thread = Thread(target=self.plot)
-        thread.start()
+        self.direction_flag = True
 
-    def stop(self, event):
+    def back(self, event):
+        self.flag = True
+        self.direction_flag = False
+
+    def pause(self, event):
         self.flag = False
 
 
@@ -125,7 +143,7 @@ class EDF(BaseData):
             self.header['reserved_area_1'] = self._read(44)
             self.header['n_data_blocks'] = int(self._read(8))
             # sample length (s) in each block for all channels
-            self.header['sample_length'] = self._read(8)
+            self.header['sample_length'] = float(self._read(8))
             self.header['n_channels'] = int(self._read(4))
             n_channels = self.header['n_channels']
             self.header['channels_name'] = self._read(16, n_channels)
@@ -139,6 +157,9 @@ class EDF(BaseData):
             # n_samples / sample_length (s) = sample frequency (Hz)
             self.header['n_samples'] = self._read(8, n_channels).astype(np.int)
             self.header['reserved_area_2'] = self._read(32, n_channels)
+
+            # extra info
+            self.header['sample_frequency'] = self.header['n_samples'][0] // self.header['sample_length']
 
     def read_data(self):
         with open(self.record_path, 'rb') as raw_edf:
@@ -182,7 +203,8 @@ class EDF(BaseData):
         plt.plot(self.data[channel_idx])
         plt.show()
 
-    def plot_mark_channels(self, mark_channels_data_path=None):
+    def plot_mark_channels(self, mark_channels_data_path=None, start_sec=0, interval=1000):
+        # interval: millisecond
         if mark_channels_data_path:
             channels_data = np.load(mark_channels_data_path)
         else:
@@ -194,13 +216,19 @@ class EDF(BaseData):
         for ax in axes:
             ax.set(ylim=[-1, 5])
 
-        callback = ButtonHandler(channels_data, axes)
+        n_start_points = int(start_sec * 2000)
+        step = int(interval / 1000 * self.header['sample_frequency'])
 
-        start_button = Button(plt.axes([0.65, 0.05, 0.1, 0.05]), 'Start')
-        start_button.on_clicked(callback.start)
+        callback = ButtonHandler(channels_data, axes, n_start_points, step)
 
-        stop_button = Button(plt.axes([0.8, 0.05, 0.1, 0.05]), 'Stop')
-        stop_button.on_clicked(callback.stop)
+        back_button = Button(plt.axes([0.5, 0.05, 0.1, 0.05]), 'Back')
+        back_button.on_clicked(callback.back)
+
+        forward_button = Button(plt.axes([0.8, 0.05, 0.1, 0.05]), 'Forward')
+        forward_button.on_clicked(callback.forward)
+
+        pause_button = Button(plt.axes([0.65, 0.05, 0.1, 0.05]), 'Pause')
+        pause_button.on_clicked(callback.pause)
 
         plt.subplots_adjust(left=0.05, right=0.95, bottom=0.2, wspace=0.5, hspace=0.5)
         plt.show()
@@ -210,6 +238,6 @@ class EDF(BaseData):
 
 if __name__ == "__main__":
     edf = EDF(PathConfig.SEEG_TEST)
-    # edf.read_header()
+    edf.read_header()
     # edf.read_data()
-    edf.plot_mark_channels(PathConfig.MARK_TEST)
+    edf.plot_mark_channels(mark_channels_data_path=PathConfig.MARK_TEST, start_sec=77.5, interval=200)
