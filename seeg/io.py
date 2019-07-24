@@ -57,14 +57,53 @@ class BaseData:
         raise NotImplementedError
 
 
+class ButtonHandler:
+    def __init__(self, channels_data, axes):
+        self.flag = False
+        self.channels_data = channels_data
+        self.axes = axes
+
+        self.range_s = 120000
+        self.range_e = self.range_s + 20000
+        self.step = 20
+
+        self.lines = []
+        x_data = np.arange(self.range_s, self.range_e)
+        for i, ax in enumerate(self.axes):
+            y_data = channels_data[i, self.range_s:self.range_e]
+            line = ax.plot(y_data)[0]
+            plt.draw()
+            self.lines.append(line)
+
+    def plot(self):
+        while self.flag:
+            sleep(0.01)
+            self.range_s += self.step
+            self.range_e += self.step
+            if self.range_e > self.channels_data.shape[1]:
+                break
+            for line, channel_data, ax in zip(self.lines, channels_data, self.axes):
+                x_data = np.arange(self.range_s, self.range_e)
+                y_data = channel_data[self.range_s:self.range_e]
+                line.set_xdata(x_data)
+                line.set_ydata(y_data)
+                ax.set(xlim=[self.range_s, self.range_e])
+                plt.draw()
+
+    def start(self, event):
+        self.flag = True
+        thread = Thread(target=self.plot)
+        thread.start()
+
+    def stop(self, event):
+        self.flag = False
+
+
 class EDF(BaseData):
     def __init__(self, record_path):
         super(EDF, self).__init__(record_path)
 
         self.mark_channels = ['POL DC09', 'POL DC10', 'POL DC11', 'POL DC12']
-
-        self.read_header()
-        self.read_data()
 
     def _read(self, n_bytes, n_channels=None):
         if n_channels:
@@ -143,68 +182,34 @@ class EDF(BaseData):
         plt.plot(self.data[channel_idx])
         plt.show()
 
-    def plot_mark_channels(self):
-        channels_idx = [list(self.header['channels_name']).index(name) for name in self.mark_channels]
-        channels_data = self.data[channels_idx]
+    def plot_mark_channels(self, mark_channels_data_path=None):
+        if mark_channels_data_path:
+            channels_data = np.load(mark_channels_data_path)
+        else:
+            channels_idx = [list(self.header['channels_name']).index(name) for name in self.mark_channels]
+            channels_data = self.data[channels_idx]
 
-        figure, axes = plt.subplots(len(self.mark_channels), 1, figsize=(16, 9))
+        figure, axes = plt.subplots(channels_data.shape[0], 1, figsize=(8, 6))
 
-        interval = 2000
+        for ax in axes:
+            ax.set(ylim=[-1, 5])
 
-        button_handler = ButtonHandler(channels_data, interval, axes)
+        callback = ButtonHandler(channels_data, axes)
 
-        ax_prev = plt.axes([0.8, 0.05, 0.1, 0.075])
-        stop_button = Button(ax_prev, 'Stop')
-        stop_button.on_clicked(button_handler.Stop)
+        start_button = Button(plt.axes([0.65, 0.05, 0.1, 0.05]), 'Start')
+        start_button.on_clicked(callback.start)
 
-        ax_next = plt.axes([0.7, 0.05, 0.1, 0.075])
-        start_button = Button(ax_next, 'Start')
-        start_button.on_clicked(button_handler.Start)
+        stop_button = Button(plt.axes([0.8, 0.05, 0.1, 0.05]), 'Stop')
+        stop_button.on_clicked(callback.stop)
 
-        # for i, channel_data in enumerate(channels_data):
-        #     axes[i].set(ylim=[-1, 5])
-        #     axes[i].plot(channel_data)
-
-        plt.tight_layout()
-
+        plt.subplots_adjust(left=0.05, right=0.95, bottom=0.2, wspace=0.5, hspace=0.5)
         plt.show()
 
-        # np.save(PathConfig.MARK_TEST, channels_data)
-
-
-class ButtonHandler:
-    def __init__(self, channels_data, interval, axes):
-        self.flag = False
-        self.channels_data = channels_data
-        self.interval = interval
-        self.step = interval // 2
-        self.range_start = 0
-        self.range_end = interval
-        self.axes = axes
-
-    def thread_start(self):
-        while self.flag:
-            sleep(0.01)
-            self.range_start += self.step
-            self.range_end += self.step
-            x_ticks = np.arange(self.range_start, self.range_end, 1)
-            if self.range_end > self.channels_data.shape[1]:
-                break
-            for ax, channel_data in zip(self.axes, self.channels_data):
-                ax.set_xdata(x_ticks - x_ticks[0])
-                ax.set(ylim=[-1, 5])
-                ax.set_ydata(channel_data[self.range_start:self.range_end])
-                plt.draw()
-
-    def Start(self, event):
-        self.flag = True
-        t = Thread(target=self.thread_start)
-        t.start()
-
-    def Stop(self, event):
-        self.flag = False
+        np.save(PathConfig.MARK_TEST, channels_data)
 
 
 if __name__ == "__main__":
     edf = EDF(PathConfig.SEEG_TEST)
-    edf.plot_mark_channels()
+    # edf.read_header()
+    # edf.read_data()
+    edf.plot_mark_channels(PathConfig.MARK_TEST)
