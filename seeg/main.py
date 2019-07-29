@@ -13,7 +13,7 @@ if __name__ == "__main__":
     edf.save_channels(channels_name)
 
     extract_marks(channels_name=channels_name, threshold=2.5)
-    reform_eprime_info(PathConfig.RAW_EPRIME, 2000)
+    reform_eprime_info(PathConfig.RAW_EPRIME, 1000)
 
     eprime_data = np.load(PathConfig.EPRIME)*2
     mark_path = PathConfig.SUBJECT/f'{"_".join(channels_name)}.npy'
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     test_plot.init_data(data=[eprime_data, mark_data],
                         start_sec=0,
                         step_sec=1,
-                        sample_frequency=2000,
+                        sample_frequency=[1000, 2000],
                         n_init_steps=10)
 
     test_plot.init_handler(wait_time=0.1)

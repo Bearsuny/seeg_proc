@@ -48,16 +48,17 @@ class Plot:
 
     def init_data(self, data, start_sec, step_sec, sample_frequency, n_init_steps):
         self.data = data
-        self.range_start = start_sec * sample_frequency
-        self.step = step_sec * sample_frequency
+        self.sample_frequency = np.array(sample_frequency)
+        self.range_start = start_sec * self.sample_frequency
+        self.step = step_sec * self.sample_frequency
         self.range_end = self.range_start + self.step * n_init_steps
-        self.sample_frequency = sample_frequency
 
         self.lines = []
-        x_data = np.arange(self.range_start, self.range_end) / sample_frequency
+
         for i, ax_item in enumerate(self.axes):
             for j, data_item in enumerate(self.data):
-                y_data = data_item[i, self.range_start:self.range_end]
+                x_data = np.arange(self.range_start[j], self.range_end[j]) / sample_frequency[j]
+                y_data = data_item[i, self.range_start[j]:self.range_end[j]]
                 line_item = ax_item.plot(x_data, y_data, self.line_colors[j])[0]
                 self.lines.append(line_item)
                 plt.draw()
@@ -83,12 +84,13 @@ class Plot:
         else:
             self.range_start -= self.step
             self.range_end -= self.step
-        if self.range_end > self.data[0].shape[1] or self.range_start < 0:
+        if (self.range_end > self.data[0].shape[1]).any() or (self.range_start < 0).any():
             return
-        x_data = np.arange(self.range_start, self.range_end) / self.sample_frequency
+
         for i, ax_item in enumerate(self.axes):
             for j, data_item in enumerate(self.data):
-                y_data = data_item[i, self.range_start:self.range_end]
+                x_data = np.arange(self.range_start[j], self.range_end[j]) / self.sample_frequency[j]
+                y_data = data_item[i, self.range_start[j]:self.range_end[j]]
                 self.lines[i*len(self.data)+j].set_xdata(x_data)
                 self.lines[i*len(self.data)+j].set_ydata(y_data)
                 ax_item.set(xlim=[x_data[0], x_data[-1]])
@@ -100,7 +102,7 @@ class Plot:
 
 if __name__ == "__main__":
     eprime_data = np.load(PathConfig.EPRIME)*2
-    channels_name=['POL DC12', 'POL DC11', 'POL DC10', 'POL DC09']
+    channels_name = ['POL DC12', 'POL DC11', 'POL DC10', 'POL DC09']
     mark_path = PathConfig.SUBJECT/f'{"_".join(channels_name)}.npy'
     mark_data = np.load(mark_path)[:, 117442:]
 
@@ -111,10 +113,10 @@ if __name__ == "__main__":
                           y_lim=[-1, 5],
                           y_labels=['DC12', 'DC11', 'DC10', 'DC09'],
                           line_colors=['b', 'r'])
-    test_plot.init_data(data=[eprime_data],
+    test_plot.init_data(data=[mark_data, eprime_data],
                         start_sec=0,
                         step_sec=1,
-                        sample_frequency=2000,
+                        sample_frequency=[2000, 1000],
                         n_init_steps=10)
 
     test_plot.init_handler(wait_time=0.1)

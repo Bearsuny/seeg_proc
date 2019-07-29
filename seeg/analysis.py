@@ -22,7 +22,7 @@ def extract_marks(channels_name, threshold):
     for k, v in sorted(marks_info.items()):
         print(f'{int(k, 2):02}: {len(v)}')
         total.append(len(v))
-    print(f'Total marks: {sum(total)}')
+    print(f'Total marks in SEEG: {sum(total)}')
     print(marks_info['1000'])
     print(marks_info['1001'])
 
@@ -66,5 +66,5 @@ def reform_eprime_info(eprime_info_path, sample_frequency):
 
 if __name__ == "__main__":
     extract_marks(channels_name=['POL DC12', 'POL DC11', 'POL DC10', 'POL DC09'], threshold=2.5)
-    reform_eprime_info(PathConfig.RAW_EPRIME, 2000)
+    reform_eprime_info(PathConfig.RAW_EPRIME, 1000)
     pass
