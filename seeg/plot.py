@@ -53,6 +53,10 @@ class Plot:
         self.step = step_sec * self.sample_frequency
         self.range_end = self.range_start + self.step * n_init_steps
 
+        self.range_start = self.range_start.astype(np.int)
+        self.range_end = self.range_end.astype(np.int)
+        self.step = self.step.astype(np.int)
+
         self.lines = []
 
         for i, ax_item in enumerate(self.axes):
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     eprime_data = np.load(PathConfig.EPRIME)*2
     channels_name = ['POL DC12', 'POL DC11', 'POL DC10', 'POL DC09']
     mark_path = PathConfig.SUBJECT/f'{"_".join(channels_name)}.npy'
-    mark_data = np.load(mark_path)[:, 117442:]
+    mark_data = np.load(mark_path)[:, 2512411:]
 
     test_plot = Plot()
     test_plot.init_figure(n_rows=4,
@@ -113,11 +117,11 @@ if __name__ == "__main__":
                           y_lim=[-1, 5],
                           y_labels=['DC12', 'DC11', 'DC10', 'DC09'],
                           line_colors=['b', 'r'])
-    test_plot.init_data(data=[mark_data, eprime_data],
+    test_plot.init_data(data=[mark_data],
                         start_sec=0,
-                        step_sec=1,
-                        sample_frequency=[2000, 1000],
-                        n_init_steps=10)
+                        step_sec=0.1,
+                        sample_frequency=[2000],
+                        n_init_steps=2)
 
     test_plot.init_handler(wait_time=0.1)
     test_plot.show()
