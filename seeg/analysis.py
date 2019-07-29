@@ -46,6 +46,7 @@ def reform_eprime_info(eprime_info_path, sample_frequency):
     eprime_info['sample'] = eprime_info['time'] / 1000 * sample_frequency
     eprime_info['sample'] = eprime_info['sample'].astype('int')
     print(f'Mark num in Eprime: {eprime_info.shape[0]}')
+    print(eprime_info.groupby(eprime_info['mark']).count())
 
     eprime_channel_info = np.zeros((eprime_info['sample'].values[-1], 4))
     for i in tqdm(range(eprime_info['sample'].values[-1])):
