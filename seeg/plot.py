@@ -108,7 +108,7 @@ if __name__ == "__main__":
     eprime_data = np.load(PathConfig.EPRIME)*2
     channels_name = ['POL DC12', 'POL DC11', 'POL DC10', 'POL DC09']
     mark_path = PathConfig.SUBJECT/f'{"_".join(channels_name)}.npy'
-    mark_data = np.load(mark_path)[:, 2512411:]
+    mark_data = np.load(mark_path)[:, 117442:]
 
     test_plot = Plot()
     test_plot.init_figure(n_rows=4,
@@ -119,9 +119,9 @@ if __name__ == "__main__":
                           line_colors=['b', 'r'])
     test_plot.init_data(data=[mark_data],
                         start_sec=0,
-                        step_sec=0.1,
+                        step_sec=10,
                         sample_frequency=[2000],
-                        n_init_steps=2)
+                        n_init_steps=10)
 
     test_plot.init_handler(wait_time=0.1)
     test_plot.show()
