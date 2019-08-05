@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from seeg.config import PathConfig
+from preprocessing.config import PathConfig
 
 
 def output_dict(dict_data):

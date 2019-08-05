@@ -3,7 +3,7 @@ import numpy as np
 from time import sleep
 from threading import Thread
 from matplotlib.widgets import Button
-from seeg.config import PathConfig
+from preprocessing.config import PathConfig
 
 
 class ButtonHandler:

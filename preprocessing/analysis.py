@@ -1,5 +1,5 @@
 import numpy as np
-from seeg.config import PathConfig, AnalysisConfig
+from preprocessing.config import PathConfig, AnalysisConfig
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import sklearn.cluster

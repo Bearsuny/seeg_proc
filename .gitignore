@@ -1,5 +1,5 @@
-.vscode/
+tool/
 archieve/
 data/
-trash/
+*.m~
 __pycache__/

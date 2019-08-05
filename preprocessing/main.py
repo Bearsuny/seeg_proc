@@ -1,7 +1,7 @@
-from seeg.io import EDF, output_dict
-from seeg.config import PathConfig, AnalysisConfig
-from seeg.analysis import reform_eprime_info, reform_seeg_mark, build_event, compare_eprime_mark_with_seeg_event
-from seeg.plot import Plot
+from preprocessing.io import EDF, output_dict
+from preprocessing.config import PathConfig, AnalysisConfig
+from preprocessing.analysis import reform_eprime_info, reform_seeg_mark, build_event, compare_eprime_mark_with_seeg_event
+from preprocessing.plot import Plot
 import numpy as np
     
 
