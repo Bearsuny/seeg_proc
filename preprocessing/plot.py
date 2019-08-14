@@ -117,10 +117,10 @@ if __name__ == "__main__":
                           y_lim=[-1, 5],
                           y_labels=['DC12', 'DC11', 'DC10', 'DC09'],
                           line_colors=['b', 'r'])
-    test_plot.init_data(data=[mark_data],
+    test_plot.init_data(data=[mark_data, eprime_data],
                         start_sec=0,
                         step_sec=10,
-                        sample_frequency=[2000],
+                        sample_frequency=[2000, 1000],
                         n_init_steps=10)
 
     test_plot.init_handler(wait_time=0.1)

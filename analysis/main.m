@@ -34,7 +34,6 @@ for i = 1:numel(g_cfg.subject_list)
     cfg.bad_channel = g_cfg.bad_channel;
 
     subject_proc(cfg);
-    break;
 end
 
 clear;
