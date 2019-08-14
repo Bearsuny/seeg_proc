@@ -14,6 +14,7 @@ class PathConfig:
     EPRIME_REFORM = DATA/SUBJECT/f'eprime_reform.csv'
     MARK = DATA/SUBJECT/f'mark.csv'
     EVENT = DATA/SUBJECT/f'event.csv'
+    CHANNELS_NAME = DATA/SUBJECT/f'channels_name.json'
 
 
 class AnalysisConfig:

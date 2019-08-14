@@ -9,6 +9,7 @@ import re
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import json
 
 from preprocessing.config import PathConfig
 
@@ -57,7 +58,8 @@ class EDF(BaseData):
 
     def _read(self, n_bytes, n_channels=None):
         if n_channels:
-            data = np.array([self.record_file.read(n_bytes).decode().strip() for _ in range(n_channels)])
+            data = np.array([self.record_file.read(
+                n_bytes).decode().strip() for _ in range(n_channels)])
             return None if (data == '').all() else data
         else:
             return self.record_file.read(n_bytes).decode().strip()
@@ -81,10 +83,14 @@ class EDF(BaseData):
             self.header['channels_name'] = self._read(16, n_channels)
             self.header['transducer_type'] = self._read(80, n_channels)
             self.header['physical_dim'] = self._read(8, n_channels)
-            self.header['physical_min'] = self._read(8, n_channels).astype(np.float)
-            self.header['physical_max'] = self._read(8, n_channels).astype(np.float)
-            self.header['digital_min'] = self._read(8, n_channels).astype(np.float)
-            self.header['digital_max'] = self._read(8, n_channels).astype(np.float)
+            self.header['physical_min'] = self._read(
+                8, n_channels).astype(np.float)
+            self.header['physical_max'] = self._read(
+                8, n_channels).astype(np.float)
+            self.header['digital_min'] = self._read(
+                8, n_channels).astype(np.float)
+            self.header['digital_max'] = self._read(
+                8, n_channels).astype(np.float)
             self.header['prefiltering'] = self._read(80, n_channels)
             # n_samples / sample_length (s) = sample frequency (Hz)
             self.header['n_samples'] = self._read(8, n_channels).astype(np.int)
@@ -99,26 +105,33 @@ class EDF(BaseData):
             raw_edf.seek(0, 2)
             n_record_bytes = raw_edf.tell()
             # dtype_bytes=2, dtype_np=np.int16
-            n_data_bytes = (n_record_bytes - self.header['n_header_bytes']) // 2
+            n_data_bytes = (n_record_bytes -
+                            self.header['n_header_bytes']) // 2
 
             # skip header
             raw_edf.seek(self.header['n_header_bytes'], 0)
             self.record_file = raw_edf
 
             # gain constructor
-            physical_ranges = self.header['physical_max'] - self.header['physical_min']
-            digital_ranges = self.header['digital_max'] - self.header['digital_min']
+            physical_ranges = self.header['physical_max'] - \
+                self.header['physical_min']
+            digital_ranges = self.header['digital_max'] - \
+                self.header['digital_min']
             cals = np.atleast_2d(physical_ranges / digital_ranges)
-            gains = map(lambda x: 1e-6 if x == 'uV' else 1, self.header['physical_dim'])
+            gains = map(lambda x: 1e-6 if x == 'uV' else 1,
+                        self.header['physical_dim'])
             gains = np.atleast_2d([item for item in gains])
-            offsets = np.atleast_2d(self.header['physical_min'] - (self.header['digital_min'] * cals)).T
+            offsets = np.atleast_2d(
+                self.header['physical_min'] - (self.header['digital_min'] * cals)).T
 
-            self.data = np.zeros(n_data_bytes).reshape(self.header['n_channels'], -1).astype(np.float)
+            self.data = np.zeros(n_data_bytes).reshape(
+                self.header['n_channels'], -1).astype(np.float)
             n_block_bytes = n_data_bytes//self.header['n_data_blocks']
             # item: data item for each channel in each block
             n_item_bytes = n_block_bytes // self.header['n_channels']
 
-            for i in tqdm(range(self.header['n_data_blocks'])):
+            # for i in tqdm(range(self.header['n_data_blocks'])):
+            for i in range(self.header['n_data_blocks']):
                 block = np.fromfile(self.record_file,
                                     dtype=np.int16,
                                     count=n_block_bytes)
@@ -131,8 +144,14 @@ class EDF(BaseData):
             self.data *= gains.T
 
     def save_channels(self, channels_name):
-        channels_idx = [list(self.header['channels_name']).index(name) for name in channels_name]
-        np.save(PathConfig.SUBJECT/f'{"_".join(channels_name)}.npy', self.data[channels_idx])
+        channels_idx = [list(self.header['channels_name']).index(name)
+                        for name in channels_name]
+        np.save(PathConfig.SUBJECT /
+                f'{"_".join(channels_name)}.npy', self.data[channels_idx])
+
+    def save_channels_name(self):
+        with open(PathConfig.CHANNELS_NAME, 'w') as f:
+            json.dump(list(self.header['channels_name']), f)
 
 
 if __name__ == "__main__":

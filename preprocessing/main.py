@@ -9,6 +9,7 @@ if __name__ == "__main__":
     edf = EDF(PathConfig.RAW_SEEG)
     edf.read_header()
     output_dict(edf.header)
+    edf.save_channels_name()
     edf.read_data()
     edf.save_channels(AnalysisConfig.MARK_CHANNELS_NAME)
 

@@ -14,7 +14,8 @@ def reform_seeg_mark(seeg_mark_channel_path):
     model = sklearn.cluster.DBSCAN(eps=0.5, min_samples=5, p=2)
     seeg_mark = pd.DataFrame()
     step = 10000
-    for sample_start in tqdm(range(0, data.shape[0], step)):
+    # for sample_start in tqdm(range(0, data.shape[0], step)):
+    for sample_start in range(0, data.shape[0], step):
         batch = data[sample_start:sample_start+step]
         predict = model.fit_predict(batch)
         batch = pd.DataFrame(batch)
@@ -40,7 +41,8 @@ def build_event(seeg_mark_path):
     predict = pd.read_csv(seeg_mark_path)
     history = None
     event = []
-    for predict_item in tqdm(predict.iterrows(), total=predict.shape[0]):
+    # for predict_item in tqdm(predict.iterrows(), total=predict.shape[0]):
+    for predict_item in predict.iterrows():
         predict_value = predict_item[1].values
         if str(predict_value[1]) != history:
             history = str(predict_value[1])
@@ -74,7 +76,8 @@ def reform_eprime_info(eprime_info_path, sample_frequency):
     eprime_info.to_csv(PathConfig.EPRIME_REFORM, columns=['mark', 'time'])
 
     eprime_channel_info = np.zeros((eprime_info['sample'].values[-1], 4))
-    for i in tqdm(range(eprime_info['sample'].values[-1])):
+    # for i in tqdm(range(eprime_info['sample'].values[-1])):
+    for i in range(eprime_info['sample'].values[-1]):
         if i not in eprime_info['sample'].values:
             eprime_channel_info[i] = np.array([0, 0, 0, 0])
         else:
